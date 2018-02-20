@@ -2,7 +2,6 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.MessageConsumer
-import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoField
 
@@ -20,7 +19,7 @@ class SocketVerticle(
         }
         evenBusConsumers += eventBus.consumer<OffsetDateTime>("time.of.day") { message ->
             // Convert and forward to eventBus which in turn will send on to socket
-            eventBus.sendJsonFrame(socketId, TimeOfDay(
+            eventBus.sendJsonFrame(socketId, TimeChangedEvent(
                 hour = message.body().get(ChronoField.HOUR_OF_DAY),
                 minute = message.body().get(ChronoField.MINUTE_OF_HOUR),
                 second = message.body().get(ChronoField.SECOND_OF_MINUTE)

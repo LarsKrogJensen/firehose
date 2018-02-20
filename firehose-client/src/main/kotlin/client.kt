@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
         if (ar.succeeded()) {
             println("Connected")
             val socket = ar.result()
-            socket.writeJsonFrame(Init(sequenceNo = 1))
+            socket.writeJsonFrame(SessionInitCommand(sequenceNo = 1))
 
             val parser = frameParser(4) {
                 println("Message received: $it")
