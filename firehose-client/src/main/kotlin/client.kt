@@ -1,12 +1,10 @@
-
 import io.vertx.core.Vertx
-import io.vertx.core.buffer.Buffer
-import io.vertx.core.parsetools.RecordParser
 import io.vertx.kotlin.core.VertxOptions
 import io.vertx.kotlin.core.net.NetClientOptions
 
 fun main(args: Array<String>) {
     val vertx = Vertx.vertx(VertxOptions(preferNativeTransport = true))
+    println("Using native driver: " + vertx.isNativeTransportEnabled)
 
     val netClientOptions = NetClientOptions(
         connectTimeout = 5_000,
@@ -19,21 +17,21 @@ fun main(args: Array<String>) {
         if (ar.succeeded()) {
             println("Connected")
             val socket = ar.result()
+            socket.writeJsonFrame(Init(sequenceNo = 1))
 
-            val msgBuf = Buffer.buffer().appendString("{Hello}")
-            socket.write(Buffer.buffer().appendInt(msgBuf.length()).appendBuffer(msgBuf))
-
-            val parser = RecordParser.newFixed(4) {
+            val parser = frameParser(4) {
                 println("Message received: $it")
             }
 
-            socket.closeHandler {
-                println("Socket closed")
-            }.handler {
-                    parser.handle(it)
-                }.exceptionHandler {
-                    println("Exception caught: " + it)
+            with(socket) {
+                handler(parser::handle)
+                exceptionHandler { ex ->
+                    println("Exception caught: " + ex)
                 }
+                closeHandler {
+                    println("Socket closed")
+                }
+            }
 
         } else {
             println("Failed to connect")

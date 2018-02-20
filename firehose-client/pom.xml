@@ -17,6 +17,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>se.lars</groupId>
+            <artifactId>firehose-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
         </dependency>
