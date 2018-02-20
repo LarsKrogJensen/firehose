@@ -8,8 +8,8 @@ fun main(args: Array<String>) {
 
     val netClientOptions = NetClientOptions(
         connectTimeout = 5_000,
-        reconnectAttempts = Int.MAX_VALUE,
-        reconnectInterval = 5_000
+        reconnectAttempts = 10,
+        reconnectInterval = 500
     )
     val client = vertx.createNetClient(netClientOptions)
 
@@ -23,16 +23,14 @@ fun main(args: Array<String>) {
                 println("Message received: $it")
             }
 
-            with(socket) {
-                handler(parser::handle)
-                exceptionHandler { ex ->
-                    println("Exception caught: " + ex)
-                }
-                closeHandler {
-                    println("Socket closed")
-                }
+            socket.handler(parser::handle)
+            socket.exceptionHandler { ex ->
+                println("Exception caught: " + ex)
             }
+            socket.closeHandler {
+                println("Socket closed")
 
+            }
         } else {
             println("Failed to connect")
         }
