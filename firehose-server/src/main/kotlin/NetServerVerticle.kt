@@ -1,14 +1,23 @@
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.net.NetSocket
+import io.vertx.core.net.OpenSSLEngineOptions
+import io.vertx.core.net.SelfSignedCertificate
 import io.vertx.kotlin.core.net.NetServerOptions
 
 class NetServerVerticle : AbstractVerticle() {
     val log = logger<NetServerVerticle>()
 
     override fun start(startFuture: Future<Void>) {
+        var certificate = SelfSignedCertificate.create()
+
+        OpenSSLEngineOptions.isAvailable()
         val options = NetServerOptions(
-            port = 1234
+            port = 1234,
+            ssl = true,
+            pemKeyCertOptions = certificate.keyCertOptions(),
+            pemTrustOptions = certificate.trustOptions(),
+            openSslEngineOptions = if (OpenSSLEngineOptions.isAvailable()) OpenSSLEngineOptions() else null
         )
         vertx.createNetServer(options)
             .connectHandler(this::accept)
