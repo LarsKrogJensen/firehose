@@ -17,7 +17,6 @@ class NetClientVerticle : AbstractVerticle() {
             ssl = true,
             trustAll = true,
             openSslEngineOptions = if (OpenSSLEngineOptions.isAvailable()) OpenSSLEngineOptions() else null
-
         )
         client = vertx.createNetClient(netClientOptions)
         connect()
@@ -58,7 +57,7 @@ class NetClientVerticle : AbstractVerticle() {
 
     private fun reconnect() {
         timer = vertx.setTimer(5_000) {
-            log.info("Reconnecting")
+            log.info("Reconnecting...")
             connect()
         }
     }

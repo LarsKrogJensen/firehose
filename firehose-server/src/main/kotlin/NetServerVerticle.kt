@@ -9,7 +9,7 @@ class NetServerVerticle : AbstractVerticle() {
     val log = logger<NetServerVerticle>()
 
     override fun start(startFuture: Future<Void>) {
-        var certificate = SelfSignedCertificate.create()
+        val certificate = SelfSignedCertificate.create()
 
         OpenSSLEngineOptions.isAvailable()
         val options = NetServerOptions(
