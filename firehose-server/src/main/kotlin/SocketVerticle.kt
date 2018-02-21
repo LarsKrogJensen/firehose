@@ -5,8 +5,8 @@ import io.vertx.core.eventbus.MessageConsumer
 import java.time.OffsetDateTime
 
 interface Behavoir {
-    fun apply(command: Buffer): Behavoir
-    fun apply(event: OffsetDateTime): Behavoir
+    fun apply(command: Buffer)
+    fun apply(event: OffsetDateTime)
 }
 
 class SocketVerticle(
@@ -22,10 +22,10 @@ class SocketVerticle(
         val eventBus = vertx.eventBus()
 
         evenBusConsumers += eventBus.consumer<Buffer>(eventBusId) { command ->
-            behavoir = behavoir.apply(command.body())
+            behavoir.apply(command.body())
         }
         evenBusConsumers += eventBus.consumer<OffsetDateTime>("time.of.day") { message ->
-            behavoir = behavoir.apply(message.body())
+            behavoir.apply(message.body())
         }
 
         log.info("Socket verticle $socketId started")
@@ -39,25 +39,23 @@ class SocketVerticle(
 
 
     inner class InitBehavior : Behavoir {
-        override fun apply(command: Buffer): Behavoir {
-            log.info("Socket verticle $socketId received command ${command}")
-            return StreamingBehavior()
-        }
+        override fun apply(event: OffsetDateTime) {}
 
-        override fun apply(event: OffsetDateTime) = this
+        override fun apply(command: Buffer) {
+            log.info("Socket verticle $socketId received command ${command}")
+            behavoir = StreamingBehavior()
+        }
     }
 
     inner class StreamingBehavior : Behavoir {
-        override fun apply(command: Buffer): Behavoir = this
+        override fun apply(command: Buffer) {}
 
-        override fun apply(event: OffsetDateTime): Behavoir {
-            // Convert and forward to eventBus which in turn will send on to socket
+        override fun apply(event: OffsetDateTime) {
             vertx.eventBus().sendJsonFrame(socketId, TimeChangedEvent(
                 hour = event.hour,
                 minute = event.minute,
                 second = event.second
             ))
-            return this
         }
     }
 }
