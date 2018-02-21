@@ -3,6 +3,7 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.net.NetClient
 import io.vertx.core.net.OpenSSLEngineOptions
 import io.vertx.kotlin.core.net.NetClientOptions
+import java.util.concurrent.TimeUnit.SECONDS
 
 class NetClientVerticle : AbstractVerticle() {
     val log = logger<NetClientVerticle>()
@@ -34,7 +35,9 @@ class NetClientVerticle : AbstractVerticle() {
             if (ar.succeeded()) {
                 log.info("Connected")
                 val socket = ar.result()
-                socket.writeJsonFrame(SessionInitCommand(sequenceNo = 1))
+                vertx.setTimer(SECONDS.toMillis(2)) {
+                    socket.writeJsonFrame(SessionInitCommand(sequenceNo = 1))
+                }
 
                 val parser = frameParser(4) {
                     log.info("Message received: $it")
@@ -56,7 +59,7 @@ class NetClientVerticle : AbstractVerticle() {
     }
 
     private fun reconnect() {
-        timer = vertx.setTimer(5_000) {
+        timer = vertx.setTimer(SECONDS.toMillis(5)) {
             log.info("Reconnecting...")
             connect()
         }
