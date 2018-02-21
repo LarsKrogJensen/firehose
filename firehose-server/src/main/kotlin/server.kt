@@ -8,13 +8,14 @@ fun main(args: Array<String>) {
     println("Using native driver: " + vertx.isNativeTransportEnabled)
     println("OpenSSL is available: " + OpenSSLEngineOptions.isAvailable())
 
-    registerCodec<SessionInitCommand>(vertx.eventBus())
-    registerCodec<TimeChangedEvent>(vertx.eventBus())
+    registerCodec<Command>(vertx.eventBus())
+    registerCodec<Event>(vertx.eventBus())
+    registerCodec<TimeChanged>(vertx.eventBus())
     registerCodec<OffsetDateTime>(vertx.eventBus())
 
     vertx.deployVerticle(NetServerVerticle()) { deployResult ->
         if (deployResult.succeeded()) {
-            vertx.deployVerticle(TimeOfDayVerticle())
+            vertx.deployVerticle(TimeOfDayAdapter())
         } else {
             println("Failed to deploy ${deployResult.cause()}")
             vertx.close()

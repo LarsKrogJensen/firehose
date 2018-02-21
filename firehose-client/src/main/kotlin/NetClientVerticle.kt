@@ -35,12 +35,15 @@ class NetClientVerticle : AbstractVerticle() {
             if (ar.succeeded()) {
                 log.info("Connected")
                 val socket = ar.result()
-                vertx.setTimer(SECONDS.toMillis(2)) {
-                    socket.writeJsonFrame(SessionInitCommand(sequenceNo = 1))
-                }
 
-                val parser = frameParser(4) {
-                    log.info("Message received: $it")
+                socket.writeJsonFrame(Command(
+                    commandType = CommandType.SESSION_INIT,
+                    sessionInit = SessionInitCommand(sequenceNo = 1))
+                )
+
+                val parser = frameParser(4) { buffer ->
+                    val event = buffer.toObject<Event>()
+                    log.info("Message received: $event")
                 }
 
                 socket.handler(parser::handle)

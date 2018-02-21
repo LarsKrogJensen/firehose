@@ -5,8 +5,8 @@ import io.vertx.core.eventbus.MessageConsumer
 import java.time.OffsetDateTime
 
 interface Behavoir {
-    fun apply(command: Buffer)
-    fun apply(event: OffsetDateTime)
+    fun apply(command: Command)
+    fun apply(event: TimeChanged)
 }
 
 class SocketVerticle(
@@ -22,9 +22,9 @@ class SocketVerticle(
         val eventBus = vertx.eventBus()
 
         evenBusConsumers += eventBus.consumer<Buffer>(eventBusId) { command ->
-            behavoir.apply(command.body())
+            behavoir.apply(command.body().toObject<Command>())
         }
-        evenBusConsumers += eventBus.consumer<OffsetDateTime>("time.of.day") { message ->
+        evenBusConsumers += eventBus.consumer<TimeChanged>("time.of.day") { message ->
             behavoir.apply(message.body())
         }
 
@@ -39,23 +39,26 @@ class SocketVerticle(
 
 
     inner class InitBehavior : Behavoir {
-        override fun apply(event: OffsetDateTime) {}
+        override fun apply(event: TimeChanged) {}
 
-        override fun apply(command: Buffer) {
-            log.info("Socket verticle $socketId received command ${command}")
+        override fun apply(command: Command) {
+            log.info("Socket verticle $socketId received command $command")
             behavoir = StreamingBehavior()
         }
     }
 
     inner class StreamingBehavior : Behavoir {
-        override fun apply(command: Buffer) {}
+        override fun apply(command: Command) {}
 
-        override fun apply(event: OffsetDateTime) {
-            vertx.eventBus().sendJsonFrame(socketId, TimeChangedEvent(
-                hour = event.hour,
-                minute = event.minute,
-                second = event.second
-            ))
+        override fun apply(event: TimeChanged) {
+            vertx.eventBus().sendJsonFrame(socketId, Event(
+                eventType = EventType.TIME_OF_DAY,
+                timeOfDay = TimeChangedEvent(
+                    hour = event.hour,
+                    minute = event.minute,
+                    second = event.second
+                ))
+            )
         }
     }
 }
