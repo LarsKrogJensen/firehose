@@ -2,7 +2,6 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.MessageConsumer
-import java.time.OffsetDateTime
 
 interface Behavoir {
     fun apply(command: Command)
@@ -43,6 +42,23 @@ class SocketVerticle(
 
         override fun apply(command: Command) {
             log.info("Socket verticle $socketId received command $command")
+            vertx.eventBus().send<List<TimeChanged>>("event.log", "1") { ar ->
+                if (ar.succeeded()) {
+                    log.info("successfully loaded log of ${ar.result().body().size} messages")
+                    ar.result().body().forEach { event ->
+                        vertx.eventBus().sendJsonFrame(socketId, Event(
+                            eventType = EventType.TIME_OF_DAY,
+                            timeOfDay = TimeChangedEvent(
+                                hour = event.hour,
+                                minute = event.minute,
+                                second = event.second
+                            ))
+                        )
+                    }
+                } else {
+                    log.error("failed to load log")
+                }
+            }
             behavoir = StreamingBehavior()
         }
     }
@@ -51,14 +67,14 @@ class SocketVerticle(
         override fun apply(command: Command) {}
 
         override fun apply(event: TimeChanged) {
-            vertx.eventBus().sendJsonFrame(socketId, Event(
-                eventType = EventType.TIME_OF_DAY,
-                timeOfDay = TimeChangedEvent(
-                    hour = event.hour,
-                    minute = event.minute,
-                    second = event.second
-                ))
-            )
+//            vertx.eventBus().sendJsonFrame(socketId, Event(
+//                eventType = EventType.TIME_OF_DAY,
+//                timeOfDay = TimeChangedEvent(
+//                    hour = event.hour,
+//                    minute = event.minute,
+//                    second = event.second
+//                ))
+//            )
         }
     }
 }

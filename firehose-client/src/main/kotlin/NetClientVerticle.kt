@@ -1,4 +1,3 @@
-
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.net.NetClient
 import io.vertx.core.net.OpenSSLEngineOptions
@@ -38,8 +37,8 @@ class NetClientVerticle : AbstractVerticle() {
 
                 socket.writeJsonFrame(Command(
                     commandType = CommandType.SESSION_INIT,
-                    sessionInit = SessionInitCommand(sequenceNo = 1))
-                )
+                    sessionInit = SessionInitCommand(sequenceNo = 1)
+                ))
 
                 val parser = frameParser(4) { buffer ->
                     val event = buffer.toObject<Event>()

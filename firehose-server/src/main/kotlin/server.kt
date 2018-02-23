@@ -12,10 +12,12 @@ fun main(args: Array<String>) {
     registerCodec<Event>(vertx.eventBus())
     registerCodec<TimeChanged>(vertx.eventBus())
     registerCodec<OffsetDateTime>(vertx.eventBus())
+    registerCodec<ArrayList<*>>(vertx.eventBus())
 
     vertx.deployVerticle(NetServerVerticle()) { deployResult ->
         if (deployResult.succeeded()) {
             vertx.deployVerticle(TimeOfDayAdapter())
+            vertx.deployVerticle(EventLogVericle())
         } else {
             println("Failed to deploy ${deployResult.cause()}")
             vertx.close()
