@@ -42,10 +42,19 @@ class SocketGateVerticle(
 
         override fun apply(command: Command) {
             log.info("Socket verticle $socketId received command $command")
+            behavoir = ReplayBehavior()
+        }
+    }
+
+    inner class ReplayBehavior : Behavoir {
+        private val stash = mutableListOf<TimeChanged>()
+
+        init {
             vertx.eventBus().send<List<TimeChanged>>("event.log", "1") { ar ->
                 if (ar.succeeded()) {
-                    log.info("successfully loaded log of ${ar.result().body().size} messages")
-                    ar.result().body().forEach { event ->
+                    val eventLog = ar.result().body()
+                    log.info("successfully loaded log of ${eventLog.size} messages")
+                    eventLog.forEach { event ->
                         vertx.eventBus().sendJsonFrame(socketId, Event(
                             eventType = EventType.TIME_OF_DAY,
                             timeOfDay = TimeChangedEvent(
@@ -55,12 +64,30 @@ class SocketGateVerticle(
                             ))
                         )
                     }
+                    stash.forEach { event ->
+                        vertx.eventBus().sendJsonFrame(socketId, Event(
+                            eventType = EventType.TIME_OF_DAY,
+                            timeOfDay = TimeChangedEvent(
+                                hour = event.hour,
+                                minute = event.minute,
+                                second = event.second
+                            ))
+                        )
+                    }
+                    behavoir = StreamingBehavior()
                 } else {
                     log.error("failed to load log")
                 }
             }
-            behavoir = StreamingBehavior()
         }
+
+        override fun apply(command: Command) {
+        }
+
+        override fun apply(event: TimeChanged) {
+           stash += event
+        }
+
     }
 
     inner class StreamingBehavior : Behavoir {

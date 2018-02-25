@@ -6,7 +6,6 @@ import net.openhft.chronicle.queue.impl.StoreFileListener
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 
@@ -17,8 +16,9 @@ class EventLogVericle : AbstractVerticle() {
     private val indexLookup: TreeMap<Long, Pair<Int,Int>> = TreeMap()
 
     override fun start() {
-        val queueDir = Files.createTempDirectory("chronicle-queue").toFile()
-        var currentCycle = 0
+        val queueDir = "C:\\Users\\larsk\\AppData\\Local\\Temp\\chronicle-queue14443099216027694310\\"
+//        val queueDir = Files.createTempDirectory("chronicle-queue").toFile()
+        var currentCycle: Int
         var currentIndex = 0
 
         queue = SingleChronicleQueueBuilder.binary(queueDir)
@@ -50,12 +50,15 @@ class EventLogVericle : AbstractVerticle() {
             tailer.moveToIndex(0)
             val log = mutableListOf<TimeChanged>()
 
+            val start = System.currentTimeMillis()
             var jsonText = tailer.readText()
             while (jsonText != null) {
                 log += OBJECT_MAPPER.readValue<TimeChanged>(jsonText)
                 jsonText = tailer.readText();
             }
-            
+            val end = System.currentTimeMillis()
+            println("Loaded ${log.size} in ${end-start} ms")
+
             message.reply(log)
         }
     }
