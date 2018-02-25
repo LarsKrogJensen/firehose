@@ -1,48 +1,61 @@
+
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.AbstractVerticle
-import net.openhft.chronicle.queue.ChronicleQueue
-import net.openhft.chronicle.queue.ExcerptAppender
 import net.openhft.chronicle.queue.RollCycles
 import net.openhft.chronicle.queue.impl.StoreFileListener
+import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.*
 
-
-interface MessageListener {
-    fun timeChanged(msg: TimeChanged)
-}
 
 class EventLogVericle : AbstractVerticle() {
-    private lateinit var appender: ExcerptAppender
-    private lateinit var queue: ChronicleQueue
+    private val log = logger<EventLogVericle>()
+    private lateinit var queue: SingleChronicleQueue
+    private val indexLookup: TreeMap<Long, Pair<Int,Int>> = TreeMap()
+
     override fun start() {
-        val queueDir = Paths.get("/tmp/chronicle")
+        val queueDir = Files.createTempDirectory("chronicle-queue").toFile()
+        var currentCycle = 0
+        var currentIndex = 0
+
         queue = SingleChronicleQueueBuilder.binary(queueDir)
             .rollCycle(RollCycles.MINUTELY)
             .storeFileListener { cycle, file ->
-                println("File released ${file!!.absolutePath} cycle $cycle")
-                file.delete()
+                currentCycle = cycle
+                currentIndex = 0
+                log.info("File released ${file!!.absolutePath} cycle $cycle")
+                try {
+                    file.delete()
+                } catch (e: Exception) {
+                    println(e)
+                }
             }
             .build()
 
-        val writer = queue.acquireAppender().methodWriter(MessageListener::class.java)
 
+        currentCycle = RollCycles.MINUTELY.toCycle(0)
+
+        val appender = queue.acquireAppender()
+        val tailer = queue.createTailer()
         vertx.eventBus().consumer<TimeChanged>("time.of.day") { message ->
-            writer.timeChanged(message.body())
+            appender.writeText(OBJECT_MAPPER.writeValueAsString(message.body()))
+            indexLookup += System.nanoTime() to Pair(currentCycle, currentIndex)
+            currentIndex++
         }
 
         vertx.eventBus().consumer<String>("event.log") { message ->
-            val tailer = queue.createTailer()
             tailer.moveToIndex(0)
             val log = mutableListOf<TimeChanged>()
-            val reader = tailer.methodReader(object: MessageListener{
-                override fun timeChanged(msg: TimeChanged) {
-                    println(msg)
-                    log += msg
-                }
-            })
-            while(reader.readOne());
 
+            var jsonText = tailer.readText()
+            while (jsonText != null) {
+                log += OBJECT_MAPPER.readValue<TimeChanged>(jsonText)
+                jsonText = tailer.readText();
+            }
+            
             message.reply(log)
         }
     }

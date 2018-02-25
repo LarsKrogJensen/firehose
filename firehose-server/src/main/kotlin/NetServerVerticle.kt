@@ -33,7 +33,7 @@ class NetServerVerticle : AbstractVerticle() {
     }
 
     private fun accept(socket: NetSocket) {
-        val socketVerticle = SocketVerticle(socketId = socket.writeHandlerID(), eventBusId = "eb-${socket.writeHandlerID()}")
+        val socketVerticle = SocketGateVerticle(socketId = socket.writeHandlerID(), eventBusId = "eb-${socket.writeHandlerID()}")
         vertx.deployVerticle(socketVerticle) { deployResult ->
             if (deployResult.succeeded()) {
                 val parser = frameParser(4) { buffer ->

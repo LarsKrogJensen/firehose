@@ -1,17 +1,12 @@
+
 import io.vertx.core.AbstractVerticle
-import net.openhft.chronicle.bytes.BytesIn
-import net.openhft.chronicle.bytes.BytesOut
-import net.openhft.chronicle.bytes.ReadBytesMarshallable
-import net.openhft.chronicle.bytes.WriteBytesMarshallable
-import net.openhft.chronicle.wire.AbstractMarshallable
-import net.openhft.chronicle.wire.Marshallable
 import java.time.OffsetDateTime
 
 data class TimeChanged(
     val hour: Int? = null,
     val minute: Int? = null,
     val second: Int? = null
-) : AbstractMarshallable()
+) //: AbstractMarshallable()
 
 class TimeOfDayAdapter : AbstractVerticle() {
     private var timer: Long? = null

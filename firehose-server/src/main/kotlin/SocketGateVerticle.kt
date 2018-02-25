@@ -8,12 +8,12 @@ interface Behavoir {
     fun apply(event: TimeChanged)
 }
 
-class SocketVerticle(
+class SocketGateVerticle(
     private val socketId: String,
     private val eventBusId: String
 ) : AbstractVerticle() {
 
-    private val log = logger<SocketVerticle>()
+    private val log = logger<SocketGateVerticle>()
     private val evenBusConsumers = mutableListOf<MessageConsumer<*>>()
     private var behavoir: Behavoir = InitBehavior()
 
@@ -67,14 +67,14 @@ class SocketVerticle(
         override fun apply(command: Command) {}
 
         override fun apply(event: TimeChanged) {
-//            vertx.eventBus().sendJsonFrame(socketId, Event(
-//                eventType = EventType.TIME_OF_DAY,
-//                timeOfDay = TimeChangedEvent(
-//                    hour = event.hour,
-//                    minute = event.minute,
-//                    second = event.second
-//                ))
-//            )
+            vertx.eventBus().sendJsonFrame(socketId, Event(
+                eventType = EventType.TIME_OF_DAY,
+                timeOfDay = TimeChangedEvent(
+                    hour = event.hour,
+                    minute = event.minute,
+                    second = event.second
+                ))
+            )
         }
     }
 }
