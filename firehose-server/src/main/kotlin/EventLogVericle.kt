@@ -6,8 +6,10 @@ import net.openhft.chronicle.queue.impl.StoreFileListener
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 class EventLogVericle : AbstractVerticle() {
@@ -16,9 +18,10 @@ class EventLogVericle : AbstractVerticle() {
     private val indexLookup: TreeMap<Long, Pair<Int,Int>> = TreeMap()
 
     override fun start() {
-        val queueDir = "C:\\Users\\larsk\\AppData\\Local\\Temp\\chronicle-queue14443099216027694310\\"
-//        val queueDir = Files.createTempDirectory("chronicle-queue").toFile()
-        var currentCycle: Int
+        //val queueDir = "C:\\Users\\larsk\\AppData\\Local\\Temp\\chronicle-queue14443099216027694310\\"
+        val queueDir = Files.createTempDirectory("chronicle-queue").toFile()
+        var currentCycle: Int = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()).toInt()
+
         var currentIndex = 0
 
         queue = SingleChronicleQueueBuilder.binary(queueDir)
@@ -36,8 +39,8 @@ class EventLogVericle : AbstractVerticle() {
             .build()
 
 
-        currentCycle = RollCycles.MINUTELY.toCycle(0)
-
+        //currentCycle = RollCycles.MINUTELY.toCycle(0)
+        println("initial cycle $currentCycle")
         val appender = queue.acquireAppender()
         val tailer = queue.createTailer()
         vertx.eventBus().consumer<TimeChanged>("time.of.day") { message ->
