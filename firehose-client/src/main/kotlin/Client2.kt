@@ -23,25 +23,26 @@ class NettyClient(host: String, port: Int) {
 
     init {
         val sslCtx = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build()
-        bootstrap = Bootstrap()
-        bootstrap.group(eventGroup)
-        bootstrap.channel(NioSocketChannel::class.java)
-        bootstrap.remoteAddress(InetSocketAddress(host, port))
-        bootstrap.handler(object : ChannelInitializer<SocketChannel>() {
-            override fun initChannel(channel: SocketChannel) {
-                val pipeline = channel.pipeline()
-                pipeline.addLast(sslCtx.newHandler(channel.alloc()));
-                pipeline.addLast("length-decoder",
-                                 LengthFieldBasedFrameDecoder(
-                                     Short.MAX_VALUE.toInt(), 0, 4, 0, 4))
-                pipeline.addLast("stringDecoder", StringDecoder(CharsetUtil.UTF_8));
+        bootstrap = Bootstrap().apply {
+            group(eventGroup)
+            channel(NioSocketChannel::class.java)
+            remoteAddress(InetSocketAddress(host, port))
+            handler(object : ChannelInitializer<SocketChannel>() {
+                override fun initChannel(channel: SocketChannel) {
+                    val pipeline = channel.pipeline()
+                    pipeline.addLast(sslCtx.newHandler(channel.alloc()));
+                    pipeline.addLast("length-decoder",
+                                     LengthFieldBasedFrameDecoder(
+                                         Short.MAX_VALUE.toInt(), 0, 4, 0, 4))
+                    pipeline.addLast("stringDecoder", StringDecoder(CharsetUtil.UTF_8));
 
-                pipeline.addLast("length-encoder", LengthFieldPrepender(4));
-                pipeline.addLast("stringEncoder", StringEncoder(CharsetUtil.UTF_8))
+                    pipeline.addLast("length-encoder", LengthFieldPrepender(4));
+                    pipeline.addLast("stringEncoder", StringEncoder(CharsetUtil.UTF_8))
 
-                pipeline.addLast(ClientHandler())
-            }
-        })
+                    pipeline.addLast(ClientHandler())
+                }
+            })
+        }
     }
 
     fun open() {
